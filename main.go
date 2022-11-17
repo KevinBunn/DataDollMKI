@@ -271,7 +271,9 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		}
 		// sort by highest value desc
 		sort.Slice(embedFields, func(i, j int) bool {
-			return fmt.Sprint(embedFields[i].Value) > fmt.Sprint(embedFields[j].Value)
+			a, _ := strconv.Atoi(embedFields[i].Value)
+			b, _ := strconv.Atoi(embedFields[j].Value)
+			return a > b
 		})
 		// add an integer for leaderboard position after sort
 		for i, field := range embedFields {
