@@ -5,5 +5,6 @@ type Event struct {
 	Format       string
 	Participants []Player
 	Pairings     []Pairing
+	Date         string
 	Store        string
 }

@@ -8,7 +8,6 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"log"
-	"time"
 )
 
 // Global variables that will be accessed in most/all functions
@@ -42,7 +41,7 @@ func UploadEvent(event structs.Event) error {
 		"store":        event.Store,
 		"participants": event.Participants,
 		"pairings":     event.Pairings,
-		"date":         time.Now().Format("Jan 2, 2006"),
+		"date":         event.Date,
 	})
 	return err
 }
