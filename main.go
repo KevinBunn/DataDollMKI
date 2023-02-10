@@ -5,15 +5,17 @@ import (
 	"GolandProjects/DataDollMKI/structs"
 	"encoding/csv"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 )
 
 var defaultManagePermissions int64 = discordgo.PermissionManageServer
@@ -217,6 +219,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			log.Println(err)
 			errorRespond(s, i, "Could not upload event to the database")
 		}
+
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -224,6 +227,8 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
+
+		messageUsersForCommunityVote(s, i, players)
 	},
 	"link-gem-id": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
@@ -249,6 +254,16 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			errorRespond(s, i, "Could not get player to discord map.")
 		}
 		pairings, err := db.GetEventPairings()
+		if err != nil {
+			log.Println(err)
+			errorRespond(s, i, "Could not get player pairings.")
+		}
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				// Content: "Getting pairing data",
+			},
+		})
 		for _, member := range discordToGemMap {
 			var discordID = fmt.Sprint(member["discordID"])
 			var gemID = fmt.Sprint(member["gemID"])
@@ -264,7 +279,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			guildMember, err := s.GuildMember(i.GuildID, discordID)
 			if err != nil {
 				log.Println(err)
-				errorRespond(s, i, "Could not find member with ID: "+discordID)
+				sendSimpleMessage(s, i, "Could not find member with ID: "+discordID)
 			}
 			xp := winCount * 3
 			var name string
@@ -274,7 +289,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			} else {
 				name = guildMember.Nick
 			}
-
+			fmt.Println(name)
 			embedFields = append(embedFields, &discordgo.MessageEmbedField{Name: name, Value: strconv.Itoa(xp), Inline: false})
 		}
 		// sort by highest value desc
@@ -287,17 +302,15 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		for i, field := range embedFields {
 			field.Name = fmt.Sprint(i+1) + ". " + field.Name
 		}
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{
-					{
-						Title:  "XP Leaderboard",
-						Color:  11342935,
-						Fields: embedFields,
-						Footer: &discordgo.MessageEmbedFooter{
-							Text: time.Now().Format("Jan 2, 2006"),
-						},
+
+		s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title:  "XP Leaderboard",
+					Color:  11342935,
+					Fields: embedFields,
+					Footer: &discordgo.MessageEmbedFooter{
+						Text: time.Now().Format("Jan 2, 2006"),
 					},
 				},
 			},
@@ -519,6 +532,94 @@ var componentsHandlers = map[string]func(s *discordgo.Session, i *discordgo.Inte
 			errorRespond(s, i, errString)
 		}
 	},
+	"community-vote-submit": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		loc, _ := time.LoadLocation("America/Denver")
+		fmt.Println(i.Message.Timestamp.In(loc).Date())
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseUpdateMessage,
+			Data: &discordgo.InteractionResponseData{
+				Content:    "Thank you, your vote has been recorded",
+				Components: []discordgo.MessageComponent{},
+			},
+		})
+		if err != nil {
+			sendSimpleMessage(s, i, "The interaction failed to respond, you should probably tell Kevin")
+		}
+		channel, err := s.UserChannelCreate("453428099544252417")
+		// channel, err := s.UserChannelCreate("241699487972589570")
+		if err != nil {
+			sendSimpleMessage(s, i, "Oh no, I couldn't update the vote count, please tell Sam your vote instead")
+		}
+		s.ChannelMessageSend(channel.ID, i.User.Username+" voted for "+i.MessageComponentData().Values[0])
+	},
+}
+
+func RemoveIndex[T any](s []T, index int) []T {
+	ret := make([]T, 0)
+	ret = append(ret, s[:index]...)
+	return append(ret, s[index+1:]...)
+}
+
+func messageUsersForCommunityVote(s *discordgo.Session, i *discordgo.InteractionCreate, players []structs.Player) {
+	discordToGemMap, err := db.GetDiscordToGemMap()
+	if err != nil {
+		sendSimpleMessage(s, i, "Could not get the discord to gem map")
+	}
+	for index, player := range players {
+		var playerChoices []structs.Player
+		var discordID string
+		for _, entry := range discordToGemMap {
+			if player.GemID == entry["gemID"] {
+				discordID = entry["discordID"].(string)
+			}
+		}
+		playerChoices = RemoveIndex(players, index)
+
+		fmt.Println(playerChoices)
+		if discordID == "" {
+			// we don't know the discord ID so it will have to be done manually.
+			fmt.Println(player.Name + " is not in firebase")
+			// sendSimpleMessage(s, i, player.Name+" is not in firebase")
+		} else {
+			// message the user to vote for a list of players that does not include them.
+			sendVoteMessage(s, i, discordID, playerChoices, player.Name)
+		}
+	}
+}
+
+func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, discordID string, playerChoices []structs.Player, playerName string) {
+	channel, err := s.UserChannelCreate(discordID)
+	if err != nil {
+		errorRespond(s, i, "Could not get the channel for the user.")
+	}
+	// Create vote options
+	votingOptions := make([]discordgo.SelectMenuOption, len(playerChoices))
+	for index, choice := range playerChoices {
+		votingOptions[index] = discordgo.SelectMenuOption{
+			Label: choice.Name,
+			Value: choice.Name,
+		}
+	}
+	s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:       "Vote for Community Mat",
+				Color:       8860200,
+				Description: "Thanks for coming to the Armory " + strings.Split(playerName, " ")[0] + "! Select one of the other attendees to cast your vote for who should recieve the community mat.",
+			},
+		},
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.SelectMenu{
+						CustomID:    "community-vote-submit",
+						Placeholder: "Select Attendee",
+						Options:     votingOptions,
+					},
+				},
+			},
+		},
+	})
 }
 
 func handleSelectInteraction(s *discordgo.Session, i *discordgo.InteractionCreate, applicableRoleIDs []string) string {
@@ -555,6 +656,10 @@ func handleSelectInteraction(s *discordgo.Session, i *discordgo.InteractionCreat
 		return "The interaction failed to respond, but you should still have the new role(s)"
 	}
 	return ""
+}
+
+func sendSimpleMessage(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
+	s.ChannelMessageSend(i.ChannelID, message)
 }
 
 func errorRespond(s *discordgo.Session, i *discordgo.InteractionCreate, message string) {
