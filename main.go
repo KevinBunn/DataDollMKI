@@ -647,7 +647,7 @@ func messageUsersForCommunityVote(s *discordgo.Session, i *discordgo.Interaction
 			// sendSimpleMessage(s, i, player.Name+" is not in firebase")
 		} else {
 			// message the user to vote for a list of players that does not include them.
-			// sendVoteMessage(s, i, discordID, playerChoices, gemToDiscordMap, player.Name, storeName, date)
+			sendVoteMessage(s, i, discordID, playerChoices, gemToDiscordMap, player.Name, storeName, date)
 		}
 	}
 }
