@@ -84,7 +84,7 @@ var commands = []*discordgo.ApplicationCommand{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "date",
-				Description: "Date of the event. Format: MM-DD-YYYY",
+				Description: "Date of the event. Format: Mon DD, YYYY",
 				Required:    true,
 			},
 			{
@@ -260,7 +260,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			},
 		})
 
-		messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
+		// messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
 	},
 	"link-gem-id": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
