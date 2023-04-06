@@ -543,7 +543,54 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 	},
 	"test-message": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		// discordToGemMap, _ := db.GetDiscordToGemMap()
-		db.GetLatest4WeeksVotingForStore("Your Toy Link")
+		err, voters := db.GetLatest4WeeksVotingForStore("Your Toy Link")
+		if err != nil {
+			fmt.Println(err)
+			errorRespond(s, i, "Error getting voting data")
+		}
+
+		// display them in a discordgo.MessageEmbed
+		embed := &discordgo.MessageEmbed{
+			Title:       "Voting Data",
+			Color:       8860200,
+			Description: "Here is the voting data for the last 4 weeks",
+			Fields:      []*discordgo.MessageEmbedField{},
+		}
+		guildMembersChunk := s.RequestGuildMembers(i.GuildID, "", 0, "", false)
+		fmt.Print(guildMembersChunk)
+		for _, voter := range voters {
+			// var voterName = ""
+			// for _, guild := range guildMembersChunk {
+			// 	if guild.ID == i.GuildID {
+			// 		for _, member := range guild.Members {
+			// 			if member.User.ID == voter.DiscordID {
+			// 				voterName = member.User.Username
+			// 			}
+			// 		}
+			// 	}
+			// }
+
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   voter.DiscordID,
+				Value:  fmt.Sprintf("%d", voter.Recieved),
+				Inline: true,
+			})
+		}
+		// respond to the interaction
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Posting ",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+
+		_, err = s.ChannelMessageSendComplex(i.ChannelID, &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{
+				embed,
+			},
+		})
+
 	},
 }
 var componentsHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
@@ -599,12 +646,12 @@ var componentsHandlers = map[string]func(s *discordgo.Session, i *discordgo.Inte
 		}
 
 		// channel, err := s.UserChannelCreate("453428099544252417")
-		// channel, err := s.UserChannelCreate("241699487972589570")
+		channel, err := s.UserChannelCreate("241699487972589570")
 		// if err != nil {
 		// 	sendSimpleMessage(s, i, "Oh no, I couldn't update the vote count, please tell Sam your vote instead")
 		// }
 		//instead of sending a message, we need to update the database
-		// s.ChannelMessageSend(channel.ID, i.User.Username+" voted for "+i.MessageComponentData().Values[0]+", "+dateField.Value)
+		s.ChannelMessageSend(channel.ID, i.User.Username+" voted for "+i.MessageComponentData().Values[0]+", "+dateField.Value)
 	},
 }
 

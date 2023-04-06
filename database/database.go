@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -198,33 +200,62 @@ func GetEventPairings() ([]structs.Pairing, error) {
 	return pairings, nil
 }
 
-func GetLatest4WeeksVotingForStore(storeName string) error {
+func GetLatest4WeeksVotingForStore(storeName string) (error, []structs.Voter) {
 	docRef := client.Collection("community-votes").Doc(storeName)
 	snapshot, err := docRef.Get(ctx)
-	fmt.Println(snapshot.Exists())
+	// fmt.Println(snapshot.Exists())
 	if err != nil && status.Code(err) != codes.NotFound {
-		return err // Handle errors other than notFound
+		return err, nil // Handle errors other than notFound
 	}
 
 	var communityVotes map[string]map[string]interface{}
 	err = snapshot.DataTo(&communityVotes)
 	if err != nil {
 		log.Fatalf("Failed to parse document data: %v", err)
+		return err, nil
 	}
-
+	votersMap := make(map[string]map[string]int)
+	// Iterate over the dates in the community votes and get the latest 4 weeks
 	for date, votes := range communityVotes {
-		// Parse the date to check if it is in February
+		// Parse the date to check if it is in the last 4 weeks
 		t, err := time.Parse("Jan 2, 2006", date)
 		if err != nil {
 			log.Fatalf("Failed to parse date: %v", err)
+			return err, nil
 		}
-		if t.Month() == time.February {
-			// Iterate over the votes for this date and do something with them
+		if t.After(time.Now().AddDate(0, 0, -28)) {
 			for voterId, voteData := range votes {
-				// Do something with the vote data
-				fmt.Printf("Vote data for voter %s on date %s: %v\n", voterId, date, voteData)
+				// add voterID to the voters map if it doesn't exist
+				_, exists := votersMap[voterId]
+				if !exists {
+					votersMap[voterId] = make(map[string]int)
+				}
+				// increment the votes made and votes received
+				votersMap[voterId]["votesMade"] += int(voteData.(map[string]interface{})["votesMade"].(int64))
+				votersMap[voterId]["votesReceived"] += int(voteData.(map[string]interface{})["votesReceived"].(int64))
 			}
 		}
 	}
-	return nil
+	var sorted []structs.Voter
+	for k, v := range votersMap {
+		sorted = append(sorted, structs.Voter{DiscordID: k, Recieved: v["votesReceived"], Made: v["votesMade"]})
+	}
+	// sort by votes received then by votes made
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].Recieved == sorted[j].Recieved {
+			// if made is the same then pick a random one
+			if sorted[i].Made == sorted[j].Made {
+				return rand.Intn(2) == 0
+			}
+			return sorted[i].Made > sorted[j].Made
+		}
+		return sorted[i].Recieved > sorted[j].Recieved
+	})
+
+	// print the top 10 voters
+	// for i := 0; i < 10; i++ {
+	// 	fmt.Println(sorted[i].GemID, sorted[i].Recieved, sorted[i].Made)
+	// }
+
+	return nil, sorted
 }
