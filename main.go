@@ -259,8 +259,9 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
-
-		messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
+		if eventType == "Armory" {
+			messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
+		}
 	},
 	"link-gem-id": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
@@ -703,45 +704,46 @@ func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, disco
 	channel, err := s.UserChannelCreate(discordID)
 	if err != nil {
 		errorRespond(s, i, "Could not get the channel for the user.")
-	}
-	// Create vote options
-	votingOptions := make([]discordgo.SelectMenuOption, len(playerChoices))
-	for index, choice := range playerChoices {
-		votingOptions[index] = discordgo.SelectMenuOption{
-			Label: choice.Name,
-			Value: gemToDiscordMap[choice.GemID],
+	} else {
+		// Create vote options
+		votingOptions := make([]discordgo.SelectMenuOption, len(playerChoices))
+		for index, choice := range playerChoices {
+			votingOptions[index] = discordgo.SelectMenuOption{
+				Label: choice.Name,
+				Value: gemToDiscordMap[choice.GemID],
+			}
 		}
+		s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title:       "Vote for Community Mat",
+					Color:       8860200,
+					Description: "Thanks for coming to the Armory " + strings.Split(playerName, " ")[0] + "! Select one of the other attendees to cast your vote for who should recieve the community mat.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:  "Store Name",
+							Value: storeName,
+						},
+						{
+							Name:  "Date",
+							Value: date,
+						},
+					},
+				},
+			},
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.SelectMenu{
+							CustomID:    "community-vote-submit",
+							Placeholder: "Select Attendee",
+							Options:     votingOptions,
+						},
+					},
+				},
+			},
+		})
 	}
-	s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
-		Embeds: []*discordgo.MessageEmbed{
-			{
-				Title:       "Vote for Community Mat",
-				Color:       8860200,
-				Description: "Thanks for coming to the Armory " + strings.Split(playerName, " ")[0] + "! Select one of the other attendees to cast your vote for who should recieve the community mat.",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "Store Name",
-						Value: storeName,
-					},
-					{
-						Name:  "Date",
-						Value: date,
-					},
-				},
-			},
-		},
-		Components: []discordgo.MessageComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
-					discordgo.SelectMenu{
-						CustomID:    "community-vote-submit",
-						Placeholder: "Select Attendee",
-						Options:     votingOptions,
-					},
-				},
-			},
-		},
-	})
 }
 
 func handleSelectInteraction(s *discordgo.Session, i *discordgo.InteractionCreate, applicableRoleIDs []string) string {
