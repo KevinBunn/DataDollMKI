@@ -703,7 +703,7 @@ func messageUsersForCommunityVote(s *discordgo.Session, i *discordgo.Interaction
 func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, discordID string, playerChoices []structs.Player, gemToDiscordMap map[string]string, playerName string, storeName string, date string) {
 	channel, err := s.UserChannelCreate(discordID)
 	if err != nil {
-		errorRespond(s, i, "Could not get the channel for the user.")
+		sendSimpleMessage(s, i, "Could not get the channel for the user with ID: "+discordID+".")
 	} else {
 		// Create vote options
 		votingOptions := make([]discordgo.SelectMenuOption, len(playerChoices))
