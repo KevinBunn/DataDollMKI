@@ -74,7 +74,7 @@ func UpdateVote(storeName string, date string, voterId string, voteeId string) e
 		communityVotes = make(map[string]map[string]interface{})
 	}
 	// First, check for date
-	_, dateExists := communityVotes[date][voterId]
+	_, dateExists := communityVotes[date]
 	if !dateExists {
 		communityVotes[date] = make(map[string]interface{})
 	}
