@@ -259,7 +259,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
-		if eventType == "Armory" {
+		if eventType == "Armory" && eventStoreName == "Your Toy Link" {
 			messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
 		}
 	},
