@@ -688,7 +688,6 @@ func messageUsersForCommunityVote(s *discordgo.Session, i *discordgo.Interaction
 		// }
 		playerChoices = RemoveIndex(players, index)
 
-		fmt.Println(playerChoices)
 		if discordID == "" {
 			// we don't know the discord ID so it will have to be done manually.
 			fmt.Println(player.Name + " is not in firebase")
@@ -713,7 +712,7 @@ func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, disco
 				Value: gemToDiscordMap[choice.GemID],
 			}
 		}
-		s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+		message, err := s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title:       "Vote for Community Mat",
@@ -743,6 +742,10 @@ func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, disco
 				},
 			},
 		})
+
+		if err != nil {
+			fmt.Fprint(os.Stderr, err)
+		}
 	}
 }
 

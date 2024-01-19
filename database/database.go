@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"sort"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -218,6 +219,8 @@ func GetLatest4WeeksVotingForStore(storeName string) (error, []structs.Voter) {
 	// Iterate over the dates in the community votes and get the latest 4 weeks
 	for date, votes := range communityVotes {
 		// Parse the date to check if it is in the last 4 weeks
+		date = strings.Replace(date, "Sept", "Sep", 1)
+
 		t, err := time.Parse("Jan 2, 2006", date)
 		if err != nil {
 			log.Fatalf("Failed to parse date: %v", err)
