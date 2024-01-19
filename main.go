@@ -712,7 +712,7 @@ func sendVoteMessage(s *discordgo.Session, i *discordgo.InteractionCreate, disco
 				Value: gemToDiscordMap[choice.GemID],
 			}
 		}
-		message, err := s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+		_, err := s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title:       "Vote for Community Mat",
