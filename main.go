@@ -243,11 +243,11 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			Date:         eventDate,
 			Store:        eventStoreName,
 		}
-		// err = db.UploadEvent(event)
-		// if err != nil {
-		// 	log.Println(err)
-		// 	errorRespond(s, i, "Could not upload event to the database")
-		// }
+		err = db.UploadEvent(event)
+		if err != nil {
+			log.Println(err)
+			errorRespond(s, i, "Could not upload event to the database")
+		}
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
