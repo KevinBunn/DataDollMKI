@@ -95,8 +95,8 @@ var commands = []*discordgo.ApplicationCommand{
 			},
 			{
 				Type:        discordgo.ApplicationCommandOptionAttachment,
-				Name:        "players",
-				Description: "The players.csv file from Gem. Upload this file second",
+				Name:        "heroes",
+				Description: "The heroes.csv file from Gem. Upload this file second",
 				Required:    true,
 			},
 		},
@@ -167,7 +167,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				eventDate = fmt.Sprint(option.Value)
 			case "pairings":
 				pairingsAttachmentId = fmt.Sprint(option.Value)
-			case "players":
+			case "heroes":
 				playersAttachmentId = fmt.Sprint(option.Value)
 			default:
 			}
@@ -204,11 +204,11 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			})
 		}
 
-		// Start Players csv
+		// Start Heroes csv
 		playersResp, err := http.Get(playersAtt.URL)
 		if err != nil {
 			log.Println(err)
-			errorRespond(s, i, "There was an error downloading players.csv")
+			errorRespond(s, i, "There was an error downloading heroes.csv")
 
 		}
 		defer playersResp.Body.Close()
@@ -216,7 +216,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		playerRecords, err := csvReader.ReadAll()
 		if err != nil {
 			log.Println(err)
-			errorRespond(s, i, "There was an error reading players.csv")
+			errorRespond(s, i, "There was an error reading heroes.csv")
 		}
 		// remove first element
 		_, playerRecords = playerRecords[0], playerRecords[1:]
@@ -224,12 +224,9 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		// prep gemID array for use later
 		gemIDs := make([]string, len(playerRecords))
 		for _, val := range playerRecords {
-			if len(val) < 4 {
-				errorRespond(s, i, "The hero's column was not added to players.csv. Please add the hero's column and run the command again")
-			}
 			players = append(players, structs.Player{
-				Name:  val[1],
-				GemID: val[2],
+				Name:  val[0],
+				GemID: val[1],
 				Hero:  val[3],
 			})
 			gemIDs = append(gemIDs, val[2])
