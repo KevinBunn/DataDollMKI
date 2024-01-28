@@ -229,7 +229,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				GemID: val[1],
 				Hero:  val[3],
 			})
-			gemIDs = append(gemIDs, val[2])
+			gemIDs = append(gemIDs, val[1])
 		}
 
 		/**
@@ -243,11 +243,11 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			Date:         eventDate,
 			Store:        eventStoreName,
 		}
-		err = db.UploadEvent(event)
-		if err != nil {
-			log.Println(err)
-			errorRespond(s, i, "Could not upload event to the database")
-		}
+		// err = db.UploadEvent(event)
+		// if err != nil {
+		// 	log.Println(err)
+		// 	errorRespond(s, i, "Could not upload event to the database")
+		// }
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
