@@ -50,6 +50,7 @@ func UploadEvent(event structs.Event) error {
 		"participants": event.Participants,
 		"pairings":     event.Pairings,
 		"date":         event.Date,
+		"bonus":        event.Bonus,
 	})
 	return err
 }
@@ -226,7 +227,7 @@ func GetLatest4WeeksVotingForStore(storeName string) (error, []structs.Voter) {
 			log.Fatalf("Failed to parse date: %v", err)
 			return err, nil
 		}
-		if t.After(time.Now().AddDate(0, 0, -28)) {
+		if t.After(time.Now().AddDate(0, 0, -29)) {
 			for voterId, voteData := range votes {
 				// add voterID to the voters map if it doesn't exist
 				_, exists := votersMap[voterId]

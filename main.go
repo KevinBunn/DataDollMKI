@@ -99,6 +99,12 @@ var commands = []*discordgo.ApplicationCommand{
 				Description: "The heroes.csv file from Gem. Upload this file second",
 				Required:    true,
 			},
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "bonus-hero",
+				Description: "The hero that will add a bonus score to a player's win",
+				Required:    false,
+			},
 		},
 	},
 	{
@@ -154,6 +160,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			eventDate            string
 			pairingsAttachmentId string
 			playersAttachmentId  string
+			eventBonus           string
 		)
 		for _, option := range i.ApplicationCommandData().Options {
 			switch option.Name {
@@ -165,6 +172,8 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				eventStoreName = fmt.Sprint(option.Value)
 			case "date":
 				eventDate = fmt.Sprint(option.Value)
+			case "bonus":
+				eventBonus = fmt.Sprint(option.Value)
 			case "pairings":
 				pairingsAttachmentId = fmt.Sprint(option.Value)
 			case "heroes":
@@ -242,6 +251,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			Pairings:     pairings,
 			Date:         eventDate,
 			Store:        eventStoreName,
+			Bonus:        eventBonus,
 		}
 		err = db.UploadEvent(event)
 		if err != nil {
@@ -256,9 +266,6 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
-		if eventType == "Armory" && eventStoreName == "Your Toy Link" {
-			messageUsersForCommunityVote(s, i, players, gemIDs, event.Store, event.Date)
-		}
 	},
 	"link-gem-id": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 

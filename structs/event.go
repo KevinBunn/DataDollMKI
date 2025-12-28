@@ -7,4 +7,5 @@ type Event struct {
 	Pairings     []Pairing
 	Date         string
 	Store        string
+	Bonus        string
 }
