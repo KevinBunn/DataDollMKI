@@ -50,7 +50,7 @@ func UploadEvent(event structs.Event) error {
 		"participants": event.Participants,
 		"pairings":     event.Pairings,
 		"date":         event.Date,
-		"bonus":        event.Bonus,
+		"Bounty":       event.Bounty,
 	})
 	return err
 }

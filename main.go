@@ -101,8 +101,8 @@ var commands = []*discordgo.ApplicationCommand{
 			},
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "bonus-hero",
-				Description: "The hero that will add a bonus score to a player's win",
+				Name:        "bounty",
+				Description: "The gem ID of the player that is the bounty for this event",
 				Required:    false,
 			},
 		},
@@ -160,7 +160,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			eventDate            string
 			pairingsAttachmentId string
 			playersAttachmentId  string
-			eventBonus           string
+			eventBounty          string
 		)
 		for _, option := range i.ApplicationCommandData().Options {
 			switch option.Name {
@@ -173,7 +173,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			case "date":
 				eventDate = fmt.Sprint(option.Value)
 			case "bonus-hero":
-				eventBonus = fmt.Sprint(option.Value)
+				eventBounty = fmt.Sprint(option.Value)
 			case "pairings":
 				pairingsAttachmentId = fmt.Sprint(option.Value)
 			case "heroes":
@@ -251,7 +251,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			Pairings:     pairings,
 			Date:         eventDate,
 			Store:        eventStoreName,
-			Bonus:        eventBonus,
+			Bounty:       eventBounty,
 		}
 		err = db.UploadEvent(event)
 		if err != nil {
