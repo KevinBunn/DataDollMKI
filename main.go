@@ -172,7 +172,7 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 				eventStoreName = fmt.Sprint(option.Value)
 			case "date":
 				eventDate = fmt.Sprint(option.Value)
-			case "bonus-hero":
+			case "bounty":
 				eventBounty = fmt.Sprint(option.Value)
 			case "pairings":
 				pairingsAttachmentId = fmt.Sprint(option.Value)

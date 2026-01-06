@@ -2,3 +2,4 @@
 google-credentials.json
 .vscode/launch.json
 __debug_bin
+.DS_Store
